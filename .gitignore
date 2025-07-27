@@ -1,46 +1,4 @@
-# === Python (FastAPI) ===
 __pycache__/
-*.py[cod]
-*.so
-.Python
-env/
 venv/
-.venv/
-*.egg-info/
-*.egg
-.pytest_cache/
-.coverage
-htmlcov/
-
-# === Node.js/React ===
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.DS_Store
-dist/
-build/
-.next/
-out/
-
-# === Общие системные файлы ===
-*.swp
-*.bak
-*.tmp
-Thumbs.db
-.idea/
-.vscode/
-*.env
-.env.local
-.env.development
-.env.production
-.env.test
-
-# === БД и логи ===
-*.sqlite
-*.log
-logs/
-
-# === Статика/медиа (если генерируется) ===
-media/
-staticfiles/
+uploads/
+*.pyc

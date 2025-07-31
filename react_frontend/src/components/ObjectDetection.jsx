@@ -1,102 +1,116 @@
 import React, { useState } from 'react';
 import './ObjectDetection.css';
 
-// Компонент для детекции объектов на изображениях
 const ObjectDetection = () => {
-  // Состояния компонента:
-  const [file, setFile] = useState(null);          // Выбранный файл изображения
-  const [preview, setPreview] = useState(null);    // URL для предпросмотра изображения
-  const [result, setResult] = useState(null);      // URL обработанного изображения с детекцией
-  const [loading, setLoading] = useState(false);  // Флаг загрузки (показывает процесс обработки)
-  const [error, setError] = useState(null);       // Сообщение об ошибке (если возникла)
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [model, setModel] = useState('nano'); // Добавляем состояние для выбранной модели
 
-  // Обработчик изменения выбранного файла
+  // Доступные модели с описанием
+  const MODEL_OPTIONS = [
+    { value: 'nano', label: 'YOLOv8 Nano (fastest)' },
+    { value: 'small', label: 'YOLOv8 Small' },
+    { value: 'medium', label: 'YOLOv8 Medium' },
+    { value: 'large', label: 'YOLOv8 Large' },
+    { value: 'xlarge', label: 'YOLOv8 XLarge (most accurate)' }
+  ];
+
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];  // Получаем первый выбранный файл
+    const selectedFile = e.target.files[0];
     if (selectedFile) {
-      setFile(selectedFile);  // Сохраняем файл в состоянии
-      // Создаем временный URL для предпросмотра
+      setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
-      setResult(null);  // Сбрасываем предыдущий результат
-      setError(null);   // Сбрасываем ошибки
+      setResult(null);
+      setError(null);
     }
   };
 
-  // Обработчик отправки формы (запуск детекции)
+  const handleModelChange = (e) => {
+    setModel(e.target.value); // Обновляем выбранную модель
+  };
+
   const handleSubmit = async (e) => {
-    e.preventDefault();  // Предотвращаем стандартное поведение формы
-    if (!file) return;   // Если файл не выбран, ничего не делаем
+    e.preventDefault();
+    if (!file) return;
 
-    setLoading(true);    // Включаем состояние загрузки
-    setError(null);     // Сбрасываем ошибки
+    setLoading(true);
+    setError(null);
 
-    // Создаем FormData для отправки файла
     const formData = new FormData();
-    formData.append('file', file);  // Добавляем файл в форму
+    formData.append('file', file);
 
     try {
-      // Отправляем запрос к FastAPI бэкенду
-      const response = await fetch('http://localhost:8000/detect', {
+      // Добавляем выбранную модель в URL запроса
+      const response = await fetch(`http://localhost:8000/detect?model_key=${model}`, {
         method: 'POST',
-        body: formData,  // Отправляем FormData с изображением
+        body: formData,
       });
 
-      // Если ответ не успешный (не 2xx)
       if (!response.ok) {
-        const errorData = await response.json();  // Пытаемся получить JSON с ошибкой
+        const errorData = await response.json();
         throw new Error(errorData.detail || 'Error processing image');
       }
 
-      // Получаем обработанное изображение как Blob
       const imageBlob = await response.blob();
-      // Создаем URL для отображения результата
       const imageUrl = URL.createObjectURL(imageBlob);
-      setResult(imageUrl);  // Сохраняем результат
+      setResult(imageUrl);
     } catch (err) {
-      setError(err.message);  // Сохраняем сообщение об ошибке
+      setError(err.message);
     } finally {
-      setLoading(false);  // Выключаем состояние загрузки в любом случае
+      setLoading(false);
     }
   };
 
-  // Рендер компонента
   return (
     <div className="container">
       <h1>Object Detection with YOLOv8</h1>
       
-      {/* Форма для загрузки изображения */}
       <form onSubmit={handleSubmit}>
+        {/* Добавляем выбор модели */}
+        <div className="form-group">
+          <label htmlFor="model-select">Select Model:</label>
+          <select
+            id="model-select"
+            value={model}
+            onChange={handleModelChange}
+            disabled={loading}
+          >
+            {MODEL_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="file-input">
-          {/* Скрытый input для выбора файла */}
           <input
             type="file"
             id="image-upload"
-            accept="image/*"  // Принимаем только изображения
+            accept="image/*"
             onChange={handleFileChange}
-            disabled={loading}  // Блокируем во время обработки
+            disabled={loading}
           />
-          {/* Кастомная кнопка для выбора файла */}
           <label htmlFor="image-upload">
             {file ? file.name : 'Choose an image...'}
           </label>
         </div>
         
-        {/* Кнопка для запуска детекции */}
         <button 
           type="submit" 
-          disabled={!file || loading}  // Блокируем если нет файла или идет обработка
+          disabled={!file || loading}
           className="detect-button"
         >
           {loading ? 'Processing...' : 'Detect Objects'}
         </button>
       </form>
 
-      {/* Блок для отображения ошибок */}
       {error && <div className="error">{error}</div>}
 
-      {/* Блок для отображения результатов */}
       <div className="results">
-        {/* Предпросмотр оригинального изображения */}
         {preview && (
           <div className="image-container">
             <h3>Original Image</h3>
@@ -104,10 +118,9 @@ const ObjectDetection = () => {
           </div>
         )}
         
-        {/* Результат детекции объектов */}
         {result && (
           <div className="image-container">
-            <h3>Detection Results</h3>
+            <h3>Detection Results ({MODEL_OPTIONS.find(m => m.value === model).label})</h3>
             <img src={result} alt="Detection Result" />
           </div>
         )}
